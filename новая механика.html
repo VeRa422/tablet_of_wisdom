@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sphinx's Tablet of Wisdom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Philosopher&display=swap');
+
+        body {
+            margin: 0; padding: 0;
+            background: #000 url('bg.png') center/cover no-repeat;
+            color: #ffd700;
+            font-family: 'Philosopher', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* Базовый стиль рабочей зоны */
+        .chamber {
+            position: relative; width: 1000px; height: 92vh;
+            background: rgba(0, 0, 0, 0.75);
+            border: 4px solid #8a6d1c; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 15px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Класс для эффекта появления */
+        .intro-anim {
+            animation: chamberEntry 1.5s ease-out forwards;
+        }
+
+        @keyframes chamberEntry {
+            from { opacity: 0; transform: scale(0.9); filter: blur(20px); }
+            to { opacity: 1; transform: scale(1); filter: blur(8px); }
+        }
+
+        .tablet-title {
+            font-family: 'Cinzel Decorative'; font-size: 28px;
+            margin-bottom: 10px; text-shadow: 0 0 15px #ffd700;
+        }
+
+        .progress-area {
+            display: flex; flex-direction: column; align-items: center;
+            margin-bottom: 15px; padding: 8px 25px;
+            background: rgba(26, 20, 3, 0.6);
+            border: 1px solid #5c4306; border-radius: 15px;
+            box-shadow: inset 0 0 15px #000;
+        }
+
+        .progress-bar { display: flex; gap: 12px; }
+
+        .progress-eye {
+            width: 50px; height: 35px; 
+            background: url('1.png') center/contain no-repeat;
+            filter: brightness(0.1) grayscale(1); 
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0.3;
+        }
+
+        .progress-eye.active {
+            filter: brightness(1.2) drop-shadow(0 0 10px #ffd700);
+            opacity: 1; transform: scale(1.15);
+        }
+
+        .matching-container {
+            display: flex; justify-content: space-between;
+            width: 900px; position: relative; z-index: 10;
+        }
+
+        .column { display: flex; flex-direction: column; gap: 8px; }
+
+        .node {
+            width: 260px; padding: 12px;
+            background: linear-gradient(135deg, #2a1f05, #1a1403);
+            border: 2px solid #8a6d1c; border-radius: 10px;
+            text-align: center; cursor: pointer;
+            transition: 0.3s; position: relative;
+            user-select: none; font-weight: bold; font-size: 16px;
+            opacity: 0; transform: translateY(20px);
+        }
+
+        .node.reveal {
+            animation: nodeFadeIn 0.5s forwards;
+        }
+
+        @keyframes nodeFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .node:hover { transform: scale(1.02); border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
+        .node.active { background: #ffd700; color: #000; box-shadow: 0 0 25px #ffd700; }
+        .node.matched { border-color: #ffd700 !important; color: #fff; opacity: 0.6; cursor: default; pointer-events: none; }
+
+        #ray-canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
+        }
+
+        /* ОБНОВЛЕННАЯ КНОПКА С АНИМАЦИЕЙ */
+        .check-btn {
+            margin-top: 15px; padding: 12px 50px;
+            font-family: 'Cinzel Decorative'; font-size: 18px;
+            background: linear-gradient(#ffd700, #b8860b);
+            border: none; cursor: pointer; border-radius: 8px;
+            color: #1a1403; transition: 0.3s; font-weight: bold;
+            box-shadow: 0 4px 0 #5c4306, 0 0 10px rgba(255, 215, 0, 0.3);
+            animation: btnGlow 2s infinite alternate;
+            position: relative;
+        }
+
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #5c4306, 0 0 20px rgba(255, 215, 0, 0.6);
+            filter: brightness(1.1);
+        }
+
+        .check-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #5c4306;
+        }
+
+        @keyframes btnGlow {
+            from { box-shadow: 0 4px 0 #5c4306, 0 0 10px rgba(255, 215, 0, 0.2); }
+            to { box-shadow: 0 4px 0 #5c4306, 0 0 25px rgba(255, 215, 0, 0.5); }
+        }
+
+        .gold-modal {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            width: 450px; background: linear-gradient(135deg, #d4af37, #f1c40f, #b8860b);
+            border: 5px solid #5c4306; padding: 25px; border-radius: 15px;
+            text-align: center; color: #1a1403; z-index: 100;
+            box-shadow: 0 0 150px #000; 
+            opacity: 0; pointer-events: none;
+            transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 1.2s;
+        }
+        .gold-modal.show { 
+            transform: translate(-50%, -50%) scale(1); 
+            opacity: 1; pointer-events: auto;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-3px, -2px); }
+            100% { transform: translate(1px, 1px); }
+        }
+        .shake-anim { animation: shake 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="chamber" id="main-chamber">
+    <div class="tablet-title">THE TABLET OF WISDOM</div>
+    
+    <div class="progress-area">
+        <div class="progress-bar">
+            <div class="progress-eye"></div><div class="progress-eye"></div>
+            <div class="progress-eye"></div><div class="progress-eye"></div>
+            <div class="progress-eye"></div><div class="progress-eye"></div>
+            <div class="progress-eye"></div>
+        </div>
+    </div>
+
+    <div class="matching-container">
+        <div class="column" id="left-col">
+            <div class="node" data-id="1">Ra</div>
+            <div class="node" data-id="2">Khepri</div>
+            <div class="node" data-id="3">Apophis</div>
+            <div class="node" data-id="4">Ankh</div>
+            <div class="node" data-id="5">Eye of Horus</div>
+            <div class="node" data-id="6">Djed Pillar</div>
+            <div class="node" data-id="7">Lotus Flower</div>
+        </div>
+        <div class="column" id="right-col">
+            <div class="node" data-match="5">Protection from evil</div>
+            <div class="node" data-match="1">The Sun God</div>
+            <div class="node" data-match="7">Symbol of rebirth</div>
+            <div class="node" data-match="2">Morning form of Ra</div>
+            <div class="node" data-match="6">Symbol of strength</div>
+            <div class="node" data-match="3">Enemy of light</div>
+            <div class="node" data-match="4">Symbol of eternal life</div>
+        </div>
+    </div>
+
+    <canvas id="ray-canvas"></canvas>
+    <button class="check-btn" onclick="finishCheck()">ACTIVATE TABLET</button>
+
+    <div id="modal" class="gold-modal">
+        <h2 id="modal-title"></h2>
+        <p id="modal-text"></p>
+        <button onclick="resetGame()" style="background:#1a1403; color:#ffd700; padding:10px 20px; border:none; cursor:pointer; font-family:'Cinzel Decorative';">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+    const sndClick = new Audio('1.mp3');
+    const sndMatch = new Audio('2.mp3');
+    const sndError = new Audio('3.mp3');
+    const sndWin   = new Audio('4.mp3'); 
+    const sndStart = new Audio('5.mp3'); 
+
+    const canvas = document.getElementById('ray-canvas');
+    const ctx = canvas.getContext('2d');
+    const chamber = document.getElementById('main-chamber');
+    
+    let selectedNode = null;
+    let connections = [];
+    let mousePos = { x: 0, y: 0 };
+
+    function revealNodes() {
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach((node, index) => {
+            node.classList.remove('reveal');
+            void node.offsetWidth; 
+            node.style.animationDelay = (index * 0.1) + 's';
+            node.classList.add('reveal');
+        });
+    }
+
+    function playChamberIntro() {
+        chamber.classList.add('intro-anim');
+        setTimeout(() => {
+            chamber.classList.remove('intro-anim');
+        }, 1500);
+    }
+
+    window.addEventListener('load', () => {
+        playChamberIntro();
+        revealNodes();
+        sndStart.play().catch(() => {});
+    });
+
+    function resize() {
+        canvas.width = chamber.clientWidth;
+        canvas.height = chamber.clientHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    document.querySelectorAll('.node').forEach(node => {
+        node.addEventListener('mousedown', e => {
+            if (node.classList.contains('matched')) return;
+            if (node.parentElement.id === 'left-col') {
+                sndClick.play();
+                if(selectedNode) selectedNode.classList.remove('active');
+                selectedNode = node;
+                node.classList.add('active');
+            } else if (selectedNode) {
+                attemptConnection(selectedNode, node);
+            }
+        });
+    });
+
+    window.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    function attemptConnection(from, to) {
+        if (from.getAttribute('data-id') === to.getAttribute('data-match')) {
+            sndMatch.play();
+            from.classList.add('matched');
+            to.classList.add('matched');
+            connections.push({ from: getCenter(from), to: getCenter(to) });
+            const eyes = document.querySelectorAll('.progress-eye');
+            if(eyes[connections.length-1]) eyes[connections.length-1].classList.add('active');
+        } else {
+            sndError.play();
+            chamber.classList.add('shake-anim');
+            setTimeout(() => chamber.classList.remove('shake-anim'), 300);
+        }
+        from.classList.remove('active');
+        selectedNode = null;
+    }
+
+    function getCenter(el) {
+        const rect = el.getBoundingClientRect();
+        const cRect = canvas.getBoundingClientRect();
+        return { x: rect.left - cRect.left + rect.width / 2, y: rect.top - cRect.top + rect.height / 2 };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        connections.forEach(c => drawRay(c.from, c.to, '#ffd700', true));
+        if (selectedNode) drawRay(getCenter(selectedNode), mousePos, '#ffd700', false);
+        requestAnimationFrame(draw);
+    }
+
+    function drawRay(s, e, col, stable) {
+        ctx.beginPath();
+        ctx.shadowBlur = stable ? 10 : 20;
+        ctx.shadowColor = col; ctx.strokeStyle = col; ctx.lineWidth = 3;
+        if (!stable) { ctx.setLineDash([8, 4]); ctx.lineDashOffset = -Date.now()/50; } 
+        else ctx.setLineDash([]);
+        ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+
+    function finishCheck() {
+        if (connections.length === 7) {
+            sndWin.play(); 
+            setTimeout(() => {
+                document.getElementById('modal-title').innerText = "SUCCESS";
+                document.getElementById('modal-text').innerText = "All seven eyes of the Sphinx are open! The gates are yours.";
+                document.getElementById('modal').classList.add('show');
+            }, 1800); 
+        } else {
+            sndError.play();
+        }
+    }
+
+    function resetGame() {
+        sndStart.play(); 
+        document.getElementById('modal').classList.remove('show');
+        connections = [];
+        selectedNode = null;
+        document.querySelectorAll('.node').forEach(n => {
+            n.classList.remove('matched', 'active', 'reveal');
+        });
+        document.querySelectorAll('.progress-eye').forEach(e => e.classList.remove('active'));
+        playChamberIntro();
+        setTimeout(revealNodes, 200);
+    }
+
+    draw();
+</script>
+</body>
+</html>
