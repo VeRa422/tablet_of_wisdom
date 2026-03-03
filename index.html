@@ -15,7 +15,16 @@
             height: 100vh; overflow: hidden;
         }
 
-        /* Базовый стиль рабочей зоны */
+        /* УПРАВЛЕНИЕ ЗВУКОМ */
+        .audio-control {
+            position: absolute; top: 20px; right: 20px;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.6); padding: 10px 15px;
+            border-radius: 30px; border: 1px solid #8a6d1c; z-index: 1000;
+        }
+        .audio-control label { color: #ffd700; font-size: 12px; font-family: 'Cinzel Decorative'; }
+        input[type=range] { cursor: pointer; accent-color: #ffd700; width: 80px; }
+
         .chamber {
             position: relative; width: 1000px; height: 92vh;
             background: rgba(0, 0, 0, 0.75);
@@ -25,14 +34,10 @@
             backdrop-filter: blur(8px);
         }
 
-        /* Класс для эффекта появления */
-        .intro-anim {
-            animation: chamberEntry 1.5s ease-out forwards;
-        }
-
+        .intro-anim { animation: chamberEntry 1.5s ease-out forwards; }
         @keyframes chamberEntry {
             from { opacity: 0; transform: scale(0.9); filter: blur(20px); }
-            to { opacity: 1; transform: scale(1); filter: blur(8px); }
+            to { opacity: 1; transform: scale(1); filter: blur(0); }
         }
 
         .tablet-title {
@@ -49,7 +54,6 @@
         }
 
         .progress-bar { display: flex; gap: 12px; }
-
         .progress-eye {
             width: 50px; height: 35px; 
             background: url('1.png') center/contain no-repeat;
@@ -57,7 +61,6 @@
             transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0.3;
         }
-
         .progress-eye.active {
             filter: brightness(1.2) drop-shadow(0 0 10px #ffd700);
             opacity: 1; transform: scale(1.15);
@@ -80,45 +83,23 @@
             opacity: 0; transform: translateY(20px);
         }
 
-        .node.reveal {
-            animation: nodeFadeIn 0.5s forwards;
-        }
-
-        @keyframes nodeFadeIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .node.reveal { animation: nodeFadeIn 0.5s forwards; }
+        @keyframes nodeFadeIn { to { opacity: 1; transform: translateY(0); } }
 
         .node:hover { transform: scale(1.02); border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
         .node.active { background: #ffd700; color: #000; box-shadow: 0 0 25px #ffd700; }
         .node.matched { border-color: #ffd700 !important; color: #fff; opacity: 0.6; cursor: default; pointer-events: none; }
 
-        #ray-canvas {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none; z-index: 5;
-        }
+        #ray-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 
-        /* ОБНОВЛЕННАЯ КНОПКА С АНИМАЦИЕЙ */
         .check-btn {
             margin-top: 15px; padding: 12px 50px;
             font-family: 'Cinzel Decorative'; font-size: 18px;
             background: linear-gradient(#ffd700, #b8860b);
             border: none; cursor: pointer; border-radius: 8px;
             color: #1a1403; transition: 0.3s; font-weight: bold;
-            box-shadow: 0 4px 0 #5c4306, 0 0 10px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 0 #5c4306;
             animation: btnGlow 2s infinite alternate;
-            position: relative;
-        }
-
-        .check-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #5c4306, 0 0 20px rgba(255, 215, 0, 0.6);
-            filter: brightness(1.1);
-        }
-
-        .check-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #5c4306;
         }
 
         @keyframes btnGlow {
@@ -134,22 +115,25 @@
             text-align: center; color: #1a1403; z-index: 100;
             box-shadow: 0 0 150px #000; 
             opacity: 0; pointer-events: none;
-            transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1), opacity 1.2s;
+            transition: 1.2s;
         }
-        .gold-modal.show { 
-            transform: translate(-50%, -50%) scale(1); 
-            opacity: 1; pointer-events: auto;
-        }
+        .gold-modal.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
 
-        @keyframes shake {
-            0% { transform: translate(1px, 1px); }
-            50% { transform: translate(-3px, -2px); }
-            100% { transform: translate(1px, 1px); }
-        }
         .shake-anim { animation: shake 0.3s; }
+        @keyframes shake { 
+            0% { transform: translate(1px, 1px); } 
+            25% { transform: translate(-3px, -2px); } 
+            75% { transform: translate(3px, 2px); }
+            100% { transform: translate(1px, 1px); } 
+        }
     </style>
 </head>
 <body>
+
+<div class="audio-control">
+    <label>Volume</label>
+    <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5">
+</div>
 
 <div class="chamber" id="main-chamber">
     <div class="tablet-title">THE TABLET OF WISDOM</div>
@@ -190,7 +174,7 @@
     <div id="modal" class="gold-modal">
         <h2 id="modal-title"></h2>
         <p id="modal-text"></p>
-        <button onclick="resetGame()" style="background:#1a1403; color:#ffd700; padding:10px 20px; border:none; cursor:pointer; font-family:'Cinzel Decorative';">PLAY AGAIN</button>
+        <button onclick="resetGame()" style="background:#1a1403; color:#ffd700; padding:10px 20px; border:none; cursor:pointer; font-family:'Cinzel Decorative';">CONTINUE</button>
     </div>
 </div>
 
@@ -201,6 +185,7 @@
     const sndWin   = new Audio('4.mp3'); 
     const sndStart = new Audio('5.mp3'); 
 
+    const volSlider = document.getElementById('vol-slider');
     const canvas = document.getElementById('ray-canvas');
     const ctx = canvas.getContext('2d');
     const chamber = document.getElementById('main-chamber');
@@ -208,6 +193,18 @@
     let selectedNode = null;
     let connections = [];
     let mousePos = { x: 0, y: 0 };
+
+    // Функция обновления громкости
+    function updateVolume() {
+        const v = volSlider.value;
+        sndClick.volume = v;
+        sndMatch.volume = v;
+        sndError.volume = v;
+        sndWin.volume = v;
+        sndStart.volume = v;
+    }
+    volSlider.addEventListener('input', updateVolume);
+    updateVolume();
 
     function revealNodes() {
         const nodes = document.querySelectorAll('.node');
@@ -221,9 +218,7 @@
 
     function playChamberIntro() {
         chamber.classList.add('intro-anim');
-        setTimeout(() => {
-            chamber.classList.remove('intro-anim');
-        }, 1500);
+        setTimeout(() => chamber.classList.remove('intro-anim'), 1500);
     }
 
     window.addEventListener('load', () => {
@@ -305,27 +300,18 @@
                 document.getElementById('modal-title').innerText = "SUCCESS";
                 document.getElementById('modal-text').innerText = "All seven eyes of the Sphinx are open! The gates are yours.";
                 document.getElementById('modal').classList.add('show');
-            }, 1800); 
+            }, 1000); 
         } else {
             sndError.play();
         }
     }
 
     function resetGame() {
-        sndStart.play(); 
-        document.getElementById('modal').classList.remove('show');
-        connections = [];
-        selectedNode = null;
-        document.querySelectorAll('.node').forEach(n => {
-            n.classList.remove('matched', 'active', 'reveal');
-        });
-        document.querySelectorAll('.progress-eye').forEach(e => e.classList.remove('active'));
-        playChamberIntro();
-        setTimeout(revealNodes, 200);
+        // Здесь можно вставить переход на финальный слайд
+        location.reload(); 
     }
 
     draw();
 </script>
 </body>
-
 </html>
